@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Recognition</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'detector/css/style.css' %}">
+</head>
+<body>
+    <div id="container">
+        <h1>Waste Detection</h1>
+
+        <!-- Camera Section -->
+        <div id="cameraWrapper">
+            <video id="camera" autoplay></video>
+            <button id="capture">Capture Image</button>
+            <canvas id="canvas" style="display: none;"></canvas>
+        </div>
+
+        <!-- Upload Section -->
+        <h2>Upload an Image</h2>
+        <div id="uploaded-image-container">
+            <h2>Uploaded Image:</h2>
+            <img id="uploadedImage" src="" alt="Uploaded Image" style="max-width: 100%; display: none;" />
+        </div>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" name="file" id="fileInput" accept="image/*" />
+        </form>
+
+        <!-- Detect Button -->
+        <button id="detectButton">Detect</button>
+    </div>
+
+    <script>
+        const camera = document.getElementById("camera");
+        const canvas = document.getElementById("canvas");
+        const captureButton = document.getElementById("capture");
+        const detectButton = document.getElementById("detectButton");
+        const fileInput = document.getElementById("fileInput");
+
+        detectButton.addEventListener("click", () => {
+        if (fileInput.files.length === 0) {
+            alert("Please upload an image first!");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        // Add CSRF token
+        formData.append("csrfmiddlewaretoken", "{{ csrf_token }}");
+
+        // Send the image to the server for detection
+        fetch("{% url 'upload_and_detect' %}", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.detected_category) {
+                alert(`Detected waste category: ${data.detected_category}`);
+            } else if (data.error) {
+                alert(`Error: ${data.error}`);
+            }
+
+            // Display the uploaded image
+            if (data.image_url) {
+                const uploadedImage = document.getElementById("uploadedImage");
+                uploadedImage.src = data.image_url;
+                uploadedImage.style.display = "block";  // Show the image
+            }
+        })
+        .catch(err => {
+            alert(`An error occurred: ${err}`);
+        });
+    });
+
+
+        // Initialize camera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                camera.srcObject = stream;
+            })
+            .catch((err) => console.error("Camera access denied:", err));
+
+        // Capture image
+        captureButton.addEventListener("click", () => {
+            const context = canvas.getContext("2d");
+            canvas.width = camera.videoWidth;
+            canvas.height = camera.videoHeight;
+            context.drawImage(camera, 0, 0, canvas.width, canvas.height);
+            alert("Image captured from camera!");
+        });
+    </script>
+</body>
+</html>
