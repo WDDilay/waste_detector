@@ -3,14 +3,14 @@ import cv2
 from tensorflow.keras.models import load_model
 
 # Load the waste detection model once when the server starts
-model = load_model('app/models/waste_model.keras')
+model = load_model('detector/models/waste_model.keras')
 
 # Map of predictions to waste categories
 WASTE_MAP = {
-    0: 'PAPER',
-    1: 'PLASTIC',
-    2: 'PLASTIC_BOTTLES',
-    3: 'PAPER_CUPS'
+    0: 'PLASTC',
+    1: 'PLASTIC_BOTTLE',
+    2: 'DISPOSABLE_CUP',
+    3: 'PAPER'
 }
 
 def preprocess_image(image_path, target_size=(64, 64)):
