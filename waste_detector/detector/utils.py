@@ -7,7 +7,7 @@ model = load_model('detector/models/waste_model.keras')
 
 # Map of predictions to waste categories
 WASTE_MAP = {
-    0: 'PLASTC',
+    0: 'PLASTIC',
     1: 'PLASTIC_BOTTLE',
     2: 'DISPOSABLE_CUP',
     3: 'PAPER'

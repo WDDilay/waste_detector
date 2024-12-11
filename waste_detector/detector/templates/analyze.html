@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waste Detector - Analyze</title>
+    {% load static %}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link rel="stylesheet" href="{% static 'detector/css/analyze.css' %}">
+</head>
+<body>
+    <header>
+        <h1>Waste Detector</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/analyze">Analyze</a></li>
+        </ul>
+    </nav>
+    <main>
+        <h2>Analyze Waste</h2>
+        <div class="upload-container">
+            <p>Upload an image or take a photo of the waste item you want to analyze:</p>
+            <div class="button-group">
+                <input type="file" id="waste-image" accept="image/*" style="display: none;">
+                <button class="upload-button" onclick="document.getElementById('waste-image').click()">Upload Image</button>
+                <button class="upload-button" onclick="startCamera()">Use Camera</button>
+            </div>
+            <video id="camera-stream" style="display: none; max-width: 100%; margin-top: 1rem;"></video>
+            <canvas id="photo-canvas" style="display: none;"></canvas>
+            <div id="camera-controls" style="display: none; margin-top: 1rem;">
+                <button class="upload-button" onclick="takePhoto()">Take Photo</button>
+                <button class="upload-button" onclick="stopCamera()">Cancel</button>
+            </div>
+            <img id="preview-image" alt="Preview" />
+            <p id="result"></p>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2023 Waste Detector. All rights reserved.</p>
+    </footer>
+    <script>
+        let stream;
+
+        document.getElementById('waste-image').addEventListener('change', function(event) {
+            var file = event.target.files[0];
+            if (file) {
+                analyzeImage(file);
+            }
+        });
+
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(mediaStream) {
+                    stream = mediaStream;
+                    const video = document.getElementById('camera-stream');
+                    video.srcObject = mediaStream;
+                    video.onloadedmetadata = function(e) {
+                        video.play();
+                    };
+                    video.style.display = 'block';
+                    document.getElementById('camera-controls').style.display = 'block';
+                })
+                .catch(function(err) {
+                    console.log("An error occurred: " + err);
+                });
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById('camera-stream').style.display = 'none';
+            document.getElementById('camera-controls').style.display = 'none';
+        }
+
+        function takePhoto() {
+            const video = document.getElementById('camera-stream');
+            const canvas = document.getElementById('photo-canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+
+            canvas.toBlob(function(blob) {
+                analyzeImage(blob);
+            }, 'image/jpeg');
+
+            stopCamera();
+        }
+
+        function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+function analyzeImage(imageData) {
+    const formData = new FormData();
+    formData.append('file', imageData);
+
+    fetch('detect/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById('result').textContent = data.error;
+        } else {
+            document.getElementById('result').textContent = `Detected waste category: ${data.detected_category}`;
+            document.getElementById('preview-image').src = data.image_url;
+            document.getElementById('preview-image').style.display = 'block';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('result').textContent = 'An error occurred during analysis.';
+    });
+}
+
+    </script>
+</body>
+</html>
+
