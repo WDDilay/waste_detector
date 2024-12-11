@@ -57,3 +57,18 @@ footer {
     bottom: 0;
     width: 100%;
 }
+.hero-image {
+    width: 100%;
+    max-width: 250px;
+    height: 250px;
+    margin: 0 auto; /* Updated to center the image */
+    display: block;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 2rem 0;
+}
